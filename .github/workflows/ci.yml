@@ -3,7 +3,7 @@ name: CI
 
 on:
   push:
-    branches: [____]        # TODO: 기본 브랜치 이름 (push될 때 실행)
+    branches: [main]
   pull_request:
 
 jobs:
@@ -20,10 +20,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: 테스트 실행
-        run: ____             # TODO: 테스트를 실행하는 명령 (5단계에서 커버리지 기준 옵션을 덧붙인다)
+        run: pytest
 
   build:
-    needs: ____               # TODO: 어느 job이 성공해야 빌드하나?
+    needs: test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
