@@ -1,0 +1,11 @@
+# 이 폴더를 그대로 GitHub 저장소로 올리므로(2단계 git add .) 실행 부산물과 비밀이 딸려 가지 않게 막는다
+# pytest --cov가 만드는 측정 결과 파일 (5단계 이후 생긴다)
+.coverage
+__pycache__/
+.pytest_cache/
+# 비밀 값과 내 PC 전용 가상환경
+.env
+.venv/
+*.pem
+# IAM 콘솔에서 내려받은 액세스 키 파일 (<사용자명>_accessKeys.csv)
+*accessKeys.csv

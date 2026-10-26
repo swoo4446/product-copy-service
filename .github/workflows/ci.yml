@@ -1,0 +1,32 @@
+# CI 워크플로우 (학생용) — TODO의 ____를 채우세요
+name: CI
+
+on:
+  push:
+    branches: [____]        # TODO: 기본 브랜치 이름 (push될 때 실행)
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 테스트 실행
+        run: ____             # TODO: 테스트를 실행하는 명령 (5단계에서 커버리지 기준 옵션을 덧붙인다)
+
+  build:
+    needs: ____               # TODO: 어느 job이 성공해야 빌드하나?
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Docker 이미지 빌드 (빌드 가능 여부만 검증)
+        run: docker build -t product-copy-service:${{ github.sha }} .
