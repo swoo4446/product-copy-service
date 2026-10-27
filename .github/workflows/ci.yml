@@ -64,9 +64,22 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-            docker pull ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
-            docker stop product-copy-service || true
-            docker rm product-copy-service || true
+            set -e
+            # User Data가 돌지 않은 인스턴스도 배포되게 Docker·AWS CLI가 없으면 설치한다 (있으면 건너뜀)
+            if ! command -v docker >/dev/null 2>&1; then
+              sudo apt-get -o DPkg::Lock::Timeout=300 update -y
+              sudo apt-get -o DPkg::Lock::Timeout=300 install -y docker.io
+              sudo systemctl enable --now docker
+              sudo usermod -aG docker ubuntu
+            fi
+            if [ ! -x /snap/bin/aws ]; then
+              sudo snap install aws-cli --classic
+            fi
+            # SSH 비대화형 세션은 PATH에 /snap/bin이 없고, 방금 추가한 docker 그룹도 적용되지 않아 전체 경로와 sudo를 쓴다
+            AWS=/snap/bin/aws
+            $AWS ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            sudo docker pull ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
+            sudo docker stop product-copy-service || true
+            sudo docker rm product-copy-service || true
             # Day 7과 같은 옵션으로 띄운다 — 포트 80(보안 그룹이 연 포트), 자동 재시작, 운영 환경 변수
-            docker run -d --name product-copy-service --restart=always -p 80:8000 -e APP_ENV=production ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
+            sudo docker run -d --name product-copy-service --restart=always -p 80:8000 -e APP_ENV=production ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
