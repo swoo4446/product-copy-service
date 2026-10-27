@@ -54,8 +54,8 @@ jobs:
 
       - name: 이미지 빌드·ECR 푸시
         run: |
-          docker build -t ${{ steps.ecr.outputs.registry }}/product-copy-service:latest .
-          docker push ${{ steps.ecr.outputs.registry }}/product-copy-service:latest
+          docker build -t ${{ steps.ecr.outputs.registry }}/product-copy-repository:latest .
+          docker push ${{ steps.ecr.outputs.registry }}/product-copy-repository:latest
 
       - name: EC2 배포 (새 컨테이너로 교체)
         uses: appleboy/ssh-action@v1
@@ -65,8 +65,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-            docker pull ${{ secrets.ECR_REGISTRY }}/product-copy-service:latest
+            docker pull ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
             docker stop product-copy-service || true
             docker rm product-copy-service || true
             # Day 7과 같은 옵션으로 띄운다 — 포트 80(보안 그룹이 연 포트), 자동 재시작, 운영 환경 변수
-            docker run -d --name product-copy-service --restart=always -p 80:8000 -e APP_ENV=production ${{ secrets.ECR_REGISTRY }}/product-copy-service:latest
+            docker run -d --name product-copy-service --restart=always -p 80:8000 -e APP_ENV=production ${{ secrets.ECR_REGISTRY }}/product-copy-repository:latest
