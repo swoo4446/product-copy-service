@@ -3,9 +3,10 @@
 **사용법**: 이 폴더(배포 위치)는 원본으로 두고, 작업 폴더 `C:\apps\product-copy-service`로 복사해 그곳을 **새 GitHub 리포지토리**로 올려 실습한다.
 
 ```powershell
-# day08-cicd-lab이 보이는 상위 폴더에서 — 작업 폴더로 복사한다
+# day08-cicd-lab이 보이는 상위 폴더에서 — 작업 폴더로 복사하고, 강사용 정답 폴더는 지운다
 Copy-Item -Recurse .\day08-cicd-lab C:\apps\product-copy-service
 cd C:\apps\product-copy-service
+if (Test-Path .\정답) { Remove-Item -Recurse -Force .\정답 }
 
 # 이후 모든 명령은 작업 폴더에서
 git init

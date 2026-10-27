@@ -24,3 +24,8 @@ def test_banned_word_detected():
     text = GOOD_TEXT.replace("가벼워서", "혁신적으로 가벼워서")
     violations = check_rules(text, PRODUCT)
     assert any("R4" in v for v in violations)
+
+def test_new_banned_word_dokbojeok():
+    text = GOOD_TEXT.replace("가벼워서", "독보적으로 가벼워서")
+    violations = check_rules(text, PRODUCT)
+    assert any("R4" in v for v in violations)

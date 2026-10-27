@@ -1,5 +1,6 @@
-# CI 워크플로우 (학생용) — TODO의 ____를 채우세요
-name: CI
+# CI/CD 전체 파이프라인
+# 필요한 Secrets: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / ECR_REGISTRY / EC2_HOST / EC2_SSH_KEY
+name: CI-CD
 
 on:
   push:
@@ -20,7 +21,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: 테스트 실행
-        run: pytest
+        # 커버리지 85% 미만이면 테스트가 모두 통과해도 실패 → 테스트를 지우는 변경을 막는다
+        run: pytest -q --cov=app --cov-fail-under=85
 
   build:
     needs: test
@@ -30,3 +32,41 @@ jobs:
 
       - name: Docker 이미지 빌드 (빌드 가능 여부만 검증)
         run: docker build -t product-copy-service:${{ github.sha }} .
+
+  deploy:
+    needs: build
+    # PR에서는 배포하지 않는다 — main에 push됐을 때만
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: AWS 자격 증명 설정
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: ECR 로그인
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 이미지 빌드·ECR 푸시
+        run: |
+          docker build -t ${{ steps.ecr.outputs.registry }}/product-copy-service:latest .
+          docker push ${{ steps.ecr.outputs.registry }}/product-copy-service:latest
+
+      - name: EC2 배포 (새 컨테이너로 교체)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            docker pull ${{ secrets.ECR_REGISTRY }}/product-copy-service:latest
+            docker stop product-copy-service || true
+            docker rm product-copy-service || true
+            # Day 7과 같은 옵션으로 띄운다 — 포트 80(보안 그룹이 연 포트), 자동 재시작, 운영 환경 변수
+            docker run -d --name product-copy-service --restart=always -p 80:8000 -e APP_ENV=production ${{ secrets.ECR_REGISTRY }}/product-copy-service:latest
