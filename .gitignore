@@ -7,3 +7,5 @@ __pycache__/
 .env
 .venv/
 *.pem
+# IAM 콘솔에서 내려받은 액세스 키 파일 (<사용자명>_accessKeys.csv)
+*accessKeys.csv
